@@ -6,15 +6,24 @@ use rmcp::{
     service::RequestContext,
 };
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use super::tools::{InteractionTool, MemoryTool, AcemcpTool};
 use super::types::{ZhiRequest, JiyiRequest};
 use crate::config::load_standalone_config;
 use crate::{log_important, log_debug};
 
+/// 客户端信息存储
+#[derive(Clone, Debug)]
+pub struct ClientInfo {
+    pub name: String,
+    pub version: String,
+}
+
 #[derive(Clone)]
 pub struct ZhiServer {
     enabled_tools: HashMap<String, bool>,
+    client_info: Arc<Mutex<Option<ClientInfo>>>,
 }
 
 impl Default for ZhiServer {
@@ -34,7 +43,15 @@ impl ZhiServer {
             }
         };
 
-        Self { enabled_tools }
+        Self {
+            enabled_tools,
+            client_info: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// 获取客户端信息
+    pub fn get_client_info(&self) -> Option<ClientInfo> {
+        self.client_info.lock().ok()?.clone()
     }
 
     /// 检查工具是否启用 - 动态读取最新配置
@@ -70,9 +87,18 @@ impl ServerHandler for ZhiServer {
 
     async fn initialize(
         &self,
-        _request: InitializeRequestParam,
+        request: InitializeRequestParam,
         _context: RequestContext<RoleServer>,
     ) -> Result<ServerInfo, McpError> {
+        // 存储客户端信息
+        if let Ok(mut client_info) = self.client_info.lock() {
+            *client_info = Some(ClientInfo {
+                name: request.client_info.name.to_string(),
+                version: request.client_info.version.to_string(),
+            });
+            log_important!(info, "客户端已连接: {} v{}", request.client_info.name, request.client_info.version);
+        }
+
         Ok(self.get_info())
     }
 
@@ -181,8 +207,11 @@ impl ServerHandler for ZhiServer {
                 let zhi_request: ZhiRequest = serde_json::from_value(arguments_value)
                     .map_err(|e| McpError::invalid_params(format!("参数解析失败: {}", e), None))?;
 
+                // 获取客户端信息
+                let client_info = self.get_client_info();
+
                 // 调用寸止工具
-                InteractionTool::zhi(zhi_request).await
+                InteractionTool::zhi(zhi_request, client_info).await
             }
             "ji" => {
                 // 检查记忆管理工具是否启用

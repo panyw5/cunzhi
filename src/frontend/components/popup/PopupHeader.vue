@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import ThemeIcon from '../common/ThemeIcon.vue'
+import type { McpRequest } from '../../types/popup'
 
 interface Props {
   currentTheme?: string
   loading?: boolean
   showMainLayout?: boolean
   alwaysOnTop?: boolean
+  mcpRequest?: McpRequest | null
 }
 
 interface Emits {
@@ -19,9 +22,33 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   showMainLayout: false,
   alwaysOnTop: false,
+  mcpRequest: null,
 })
 
 const emit = defineEmits<Emits>()
+
+// 计算标题文本
+const titleText = computed(() => {
+  const parts: string[] = []
+
+  // 优先显示 workspace 名称
+  if (props.mcpRequest?.workspace_name) {
+    parts.push(props.mcpRequest.workspace_name)
+  }
+
+  // 显示客户端名称
+  if (props.mcpRequest?.client_name) {
+    parts.push(props.mcpRequest.client_name)
+  }
+
+  // 如果有任何信息，返回组合后的标题
+  if (parts.length > 0) {
+    return parts.join(' - ')
+  }
+
+  // 如果没有任何信息，使用默认标题
+  return '寸止 - 告别AI提前终止烦恼，助力AI更加持久'
+})
 
 function handleThemeChange() {
   // 切换到下一个主题
@@ -45,7 +72,7 @@ function handleToggleAlwaysOnTop() {
       <div class="flex items-center gap-3">
         <div class="w-3 h-3 rounded-full bg-primary-500" />
         <h1 class="text-base font-medium text-white">
-          寸止 - 告别AI提前终止烦恼，助力AI更加持久
+          {{ titleText }}
         </h1>
       </div>
 
