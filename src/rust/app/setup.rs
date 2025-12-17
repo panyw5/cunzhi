@@ -6,6 +6,9 @@ use tauri::{AppHandle, Manager};
 
 /// 应用设置和初始化
 pub async fn setup_application(app_handle: &AppHandle) -> Result<(), String> {
+    // 输出启动信息
+    log_important!(info, "启动寸止应用 v{}", env!("CARGO_PKG_VERSION"));
+    
     let state = app_handle.state::<AppState>();
 
     // 加载配置并应用窗口设置

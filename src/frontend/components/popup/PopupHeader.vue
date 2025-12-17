@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { computed, onMounted, ref } from 'vue'
 import ThemeIcon from '../common/ThemeIcon.vue'
 import type { McpRequest } from '../../types/popup'
 
@@ -27,6 +28,25 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+// 版本号
+const appVersion = ref<string>('')
+
+// 获取版本号
+async function loadVersion() {
+  try {
+    const appInfo = await invoke('get_app_info') as string
+    const match = appInfo.match(/v(\d+\.\d+\.\d+)/)
+    appVersion.value = match ? match[1] : ''
+  }
+  catch (error) {
+    console.error('获取版本号失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadVersion()
+})
+
 // 计算标题文本
 const titleText = computed(() => {
   const parts: string[] = []
@@ -48,6 +68,14 @@ const titleText = computed(() => {
 
   // 如果没有任何信息，使用默认标题
   return '寸止 - 告别AI提前终止烦恼，助力AI更加持久'
+})
+
+// 计算完整标题（包含版本号）
+const fullTitle = computed(() => {
+  if (appVersion.value) {
+    return `${titleText.value} v${appVersion.value}`
+  }
+  return titleText.value
 })
 
 function handleThemeChange() {
@@ -74,6 +102,9 @@ function handleToggleAlwaysOnTop() {
         <h1 class="text-base font-medium text-white">
           {{ titleText }}
         </h1>
+        <span v-if="appVersion" class="text-xs text-white opacity-50">
+          v{{ appVersion }}
+        </span>
       </div>
 
       <!-- 右侧：操作按钮 -->
