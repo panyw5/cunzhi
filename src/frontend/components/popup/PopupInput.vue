@@ -775,7 +775,7 @@ defineExpose({
         size="small"
         :placeholder="hasOptions ? `您可以在这里添加补充说明... (支持粘贴图片 ${pasteShortcut})` : `请输入您的回复... (支持粘贴图片 ${pasteShortcut})`"
         :disabled="submitting"
-        :autosize="{ minRows: 3, maxRows: 6 }"
+        :autosize="{ minRows: 6, maxRows: 12 }"
         class="popup-input-textarea"
         data-guide="popup-input"
         @paste="handleImagePaste"
@@ -834,5 +834,6 @@ defineExpose({
 /* 输入框字体样式 */
 :deep(.popup-input-textarea textarea) {
   font-family: 'Source Code Pro', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  font-size: 15px !important;
 }
 </style>
